@@ -1,14 +1,13 @@
-package org.apache.kafka.clients.consumer.async;
+package ru.deripas.kafka.clients.consumer.async;
 
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.SimpleMockConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+import ru.deripas.kafka.clients.consumer.SimpleMockConsumer;
 
 import java.time.Duration;
 import java.util.List;
@@ -18,13 +17,15 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static java.util.Collections.singleton;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 
 public class AsyncConsumerTest {
 
     private SimpleMockConsumer<Integer, Integer> mockConsumer;
     private AsyncConsumer<Integer, Integer> asyncConsumer;
 
-    @BeforeEach
+    @BeforeMethod
     public void init() {
         mockConsumer = new SimpleMockConsumer<>();
         asyncConsumer = new AsyncConsumer<>(mockConsumer);
@@ -41,7 +42,7 @@ public class AsyncConsumerTest {
                 .doOnConsumer(consumer -> consumer.poll(Duration.ofSeconds(5)))
                 .get());
 
-        Assertions.assertEquals(records, result);
+        assertEquals(records, result);
     }
 
     @Test
@@ -52,7 +53,7 @@ public class AsyncConsumerTest {
         mockConsumer.setException(new TimeoutException());
 
         CompletableFuture<ConsumerRecords<Integer, Integer>> future = asyncConsumer.doOnConsumer(consumer -> consumer.poll(Duration.ofSeconds(5)));
-        Assertions.assertThrows(ExecutionException.class, future::get);
+        assertThrows(ExecutionException.class, future::get);
     }
 
     private List<ConsumerRecord<Integer, Integer>> toList(ConsumerRecords<Integer, Integer> consumerRecords) {

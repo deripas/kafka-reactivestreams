@@ -1,9 +1,11 @@
-package org.apache.kafka.clients.consumer.async;
+package ru.deripas.kafka.clients.consumer.async;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,5 +29,9 @@ public class AsyncConsumer<K, V> {
 
     public <T> CompletableFuture<T> doOnConsumer(Function<Consumer<K, V>, T> transform) {
         return supplyAsync(() -> transform.apply(consumer), executorService);
+    }
+
+    public CompletableFuture<ConsumerRecords<K, V>> poll(Duration timeout) {
+        return doOnConsumer(consumer -> consumer.poll(timeout));
     }
 }
