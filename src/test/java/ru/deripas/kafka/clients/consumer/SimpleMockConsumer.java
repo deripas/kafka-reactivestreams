@@ -1,17 +1,18 @@
 package ru.deripas.kafka.clients.consumer;
 
 import com.google.common.collect.Iterators;
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.MockConsumer;
-import org.apache.kafka.clients.consumer.OffsetResetStrategy;
+import org.apache.commons.lang3.ThreadUtils;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.consumer.internals.NoOpConsumerRebalanceListener;
 import org.apache.kafka.common.TopicPartition;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static org.apache.kafka.common.utils.Utils.sleep;
 
 public class SimpleMockConsumer<K, V> extends MockConsumer<K, V> {
 
@@ -52,6 +53,15 @@ public class SimpleMockConsumer<K, V> extends MockConsumer<K, V> {
         }
         offsets = newAssignment.stream().collect(Collectors.toMap(key -> key, key -> new AtomicLong()));
         listener.onPartitionsAssigned(assignment());
+    }
+
+    @Override
+    public synchronized ConsumerRecords<K, V> poll(Duration timeout) {
+        ConsumerRecords<K, V> records = super.poll(timeout);
+        if(records.isEmpty()) {
+            sleep(timeout.toMillis());
+        }
+        return records;
     }
 
     public List<ConsumerRecord<K, V>> generateRecords(int count, Supplier<K> keySupplier, Supplier<V> valueSupplier) {

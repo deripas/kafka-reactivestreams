@@ -1,4 +1,4 @@
-package ru.deripas.kafka.clients.consumer.reactivestreams;
+package ru.deripas.reactivestreams;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,13 +54,12 @@ public class SimpleSubscription<T> implements Subscription {
             if (throwable != null) {
                 log.error("request error", throwable);
                 subscriber.onError(throwable);
-                cancel();
             } else {
-                log.debug("response: {}", result);
+                log.info("response: {}", result);
+                requests.decrementAndGet();
                 subscriber.onNext(result);
             }
         } finally {
-            requests.decrementAndGet();
             isBusy.set(false);
             tryRequest();
         }

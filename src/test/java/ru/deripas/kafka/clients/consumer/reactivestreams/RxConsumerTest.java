@@ -7,11 +7,15 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import ru.deripas.kafka.clients.consumer.ConsumerRecordsUtil;
 import ru.deripas.kafka.clients.consumer.SimpleMockConsumer;
 import ru.deripas.kafka.clients.consumer.async.AsyncConsumer;
 
+import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.Collections.singleton;
 
@@ -25,16 +29,17 @@ public class RxConsumerTest {
     public void init() {
         mockConsumer = new SimpleMockConsumer<>();
         asyncConsumer = new AsyncConsumer<>(mockConsumer);
+
+        TopicPartition partition = new TopicPartition("test", 0);
+        mockConsumer.subscribe(singleton(partition.topic()));
+        mockConsumer.rebalance(singleton(partition));
     }
 
     @Test
     public void test() {
-        TopicPartition partition = new TopicPartition("test", 0);
-        mockConsumer.subscribe(singleton(partition.topic()));
-        mockConsumer.rebalance(singleton(partition));
         List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
 
-        Flowable.fromPublisher(ConsumerRecordsPublisher.create(asyncConsumer))
+        Flowable.fromPublisher(ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1)))
                 .take(1)
                 .flatMap(Flowable::fromIterable)
                 .test()
@@ -43,5 +48,41 @@ public class RxConsumerTest {
                 .assertValueSequence(records)
                 .assertNoErrors()
                 .assertComplete();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testManyWithEmpty() {
+        List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
+        ConsumerRecordsPublisher<Integer, Integer> source = ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1));
+
+        Flowable.fromPublisher(source)
+                .take(3)
+                .map(ConsumerRecordsUtil::toList)
+                .test()
+                .awaitDone(5, TimeUnit.SECONDS)
+                .assertSubscribed()
+                .assertValues(records, Collections.emptyList(), Collections.emptyList())
+                .assertNoErrors()
+                .assertComplete();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testIgnoreEmpty() {
+        List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
+        ConsumerRecordsPublisher<Integer, Integer> source = ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1));
+
+        IgnoreEmptyConsumerRecordsProcessor<Integer, Integer> processor = new IgnoreEmptyConsumerRecordsProcessor<>();
+        source.subscribe(processor);
+
+        Flowable.fromPublisher(processor)
+                .timeout(200, TimeUnit.MILLISECONDS)
+                .map(ConsumerRecordsUtil::toList)
+                .test()
+                .awaitDone(5, TimeUnit.SECONDS)
+                .assertSubscribed()
+                .assertValues(records)
+                .assertError(TimeoutException.class);
     }
 }

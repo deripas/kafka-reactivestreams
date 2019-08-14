@@ -13,12 +13,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static java.util.Collections.singleton;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
+import static ru.deripas.kafka.clients.consumer.ConsumerRecordsUtil.toList;
 
 public class AsyncConsumerTest {
 
@@ -29,17 +28,17 @@ public class AsyncConsumerTest {
     public void init() {
         mockConsumer = new SimpleMockConsumer<>();
         asyncConsumer = new AsyncConsumer<>(mockConsumer);
+
+        TopicPartition partition = new TopicPartition("test", 0);
+        mockConsumer.subscribe(singleton(partition.topic()));
+        mockConsumer.rebalance(singleton(partition));
     }
 
     @Test
     public void testSimple() throws ExecutionException, InterruptedException {
-        TopicPartition partition = new TopicPartition("test", 0);
-        mockConsumer.subscribe(singleton(partition.topic()));
-        mockConsumer.rebalance(singleton(partition));
-
         List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
         List<ConsumerRecord<Integer, Integer>> result = toList(asyncConsumer
-                .doOnConsumer(consumer -> consumer.poll(Duration.ofSeconds(5)))
+                .poll(Duration.ofSeconds(5))
                 .get());
 
         assertEquals(records, result);
@@ -47,16 +46,9 @@ public class AsyncConsumerTest {
 
     @Test
     public void testError() {
-        TopicPartition partition = new TopicPartition("test", 0);
-        mockConsumer.subscribe(singleton(partition.topic()));
-        mockConsumer.rebalance(singleton(partition));
         mockConsumer.setException(new TimeoutException());
 
-        CompletableFuture<ConsumerRecords<Integer, Integer>> future = asyncConsumer.doOnConsumer(consumer -> consumer.poll(Duration.ofSeconds(5)));
+        CompletableFuture<ConsumerRecords<Integer, Integer>> future = asyncConsumer.poll(Duration.ofSeconds(5));
         assertThrows(ExecutionException.class, future::get);
-    }
-
-    private List<ConsumerRecord<Integer, Integer>> toList(ConsumerRecords<Integer, Integer> consumerRecords) {
-        return StreamSupport.stream(consumerRecords.spliterator(), false).collect(Collectors.toList());
     }
 }

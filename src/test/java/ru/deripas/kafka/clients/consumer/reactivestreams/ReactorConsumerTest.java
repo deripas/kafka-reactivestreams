@@ -8,12 +8,17 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
+import ru.deripas.kafka.clients.consumer.ConsumerRecordsUtil;
 import ru.deripas.kafka.clients.consumer.SimpleMockConsumer;
 import ru.deripas.kafka.clients.consumer.async.AsyncConsumer;
 
+import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.Collections.singleton;
+import static java.util.stream.StreamSupport.stream;
 
 @Slf4j
 public class ReactorConsumerTest {
@@ -25,21 +30,55 @@ public class ReactorConsumerTest {
     public void init() {
         mockConsumer = new SimpleMockConsumer<>();
         asyncConsumer = new AsyncConsumer<>(mockConsumer);
-    }
 
-    @Test
-    public void test() {
         TopicPartition partition = new TopicPartition("test", 0);
         mockConsumer.subscribe(singleton(partition.topic()));
         mockConsumer.rebalance(singleton(partition));
+    }
+
+    @Test
+    public void testSingle() {
         List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
 
         StepVerifier.create(
-                Flux.from(ConsumerRecordsPublisher.create(asyncConsumer))
+                Flux.from(ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1)))
                         .take(1)
                         .flatMap(Flux::fromIterable))
                 .expectSubscription()
                 .expectNextSequence(records)
                 .verifyComplete();
+    }
+
+    @Test
+    public void testManyWithEmpty() {
+        List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
+        ConsumerRecordsPublisher<Integer, Integer> source = ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1));
+
+        StepVerifier.create(
+                Flux.from(source)
+                        .take(3)
+                        .map(ConsumerRecordsUtil::toList))
+                .expectSubscription()
+                .expectNext(records)
+                .expectNext(Collections.emptyList())
+                .expectNext(Collections.emptyList())
+                .verifyComplete();
+    }
+
+    @Test
+    public void testIgnoreEmpty() {
+        List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
+        ConsumerRecordsPublisher<Integer, Integer> source = ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1));
+
+        IgnoreEmptyConsumerRecordsProcessor<Integer, Integer> processor = new IgnoreEmptyConsumerRecordsProcessor<>();
+        source.subscribe(processor);
+
+        StepVerifier.create(
+                Flux.from(processor)
+                        .timeout(Duration.ofMillis(200))
+                        .map(ConsumerRecordsUtil::toList))
+                .expectSubscription()
+                .expectNext(records)
+                .verifyError(TimeoutException.class);
     }
 }
