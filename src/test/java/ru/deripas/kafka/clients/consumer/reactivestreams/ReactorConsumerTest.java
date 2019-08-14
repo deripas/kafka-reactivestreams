@@ -3,7 +3,9 @@ package ru.deripas.kafka.clients.consumer.reactivestreams;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
+import org.reactivestreams.Publisher;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
@@ -68,13 +70,11 @@ public class ReactorConsumerTest {
     @Test
     public void testIgnoreEmpty() {
         List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
-        ConsumerRecordsPublisher<Integer, Integer> source = ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1));
-
-        IgnoreEmptyConsumerRecordsProcessor<Integer, Integer> processor = new IgnoreEmptyConsumerRecordsProcessor<>();
-        source.subscribe(processor);
+        Publisher<ConsumerRecords<Integer, Integer>> source = ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1))
+                .with(IgnoreEmptyConsumerRecordsProcessor.create());
 
         StepVerifier.create(
-                Flux.from(processor)
+                Flux.from(source)
                         .timeout(Duration.ofMillis(200))
                         .map(ConsumerRecordsUtil::toList))
                 .expectSubscription()

@@ -4,7 +4,9 @@ import io.reactivex.Flowable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
+import org.reactivestreams.Publisher;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import ru.deripas.kafka.clients.consumer.ConsumerRecordsUtil;
@@ -71,12 +73,10 @@ public class RxConsumerTest {
     @Test
     public void testIgnoreEmpty() {
         List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
-        ConsumerRecordsPublisher<Integer, Integer> source = ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1));
+        Publisher<ConsumerRecords<Integer, Integer>> source = ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1))
+                .with(IgnoreEmptyConsumerRecordsProcessor.create());
 
-        IgnoreEmptyConsumerRecordsProcessor<Integer, Integer> processor = new IgnoreEmptyConsumerRecordsProcessor<>();
-        source.subscribe(processor);
-
-        Flowable.fromPublisher(processor)
+        Flowable.fromPublisher(source)
                 .timeout(200, TimeUnit.MILLISECONDS)
                 .map(ConsumerRecordsUtil::toList)
                 .test()
