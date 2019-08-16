@@ -4,26 +4,22 @@ import org.reactivestreams.Processor;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 public class DelegateProcessor<T> extends SimplePublisher<T> implements Processor<T, T> {
 
-    private final AtomicReference<Subscription> subscription = new AtomicReference<>(null);
+    private final SubscriptionRef ref = new SubscriptionRef();
 
     protected Subscription subscription() {
-        return subscription.get();
+        return ref;
     }
 
     @Override
     protected Subscription createSubscription(Subscriber<? super T> subscriber) {
-        return subscription();
+        return ref;
     }
 
     @Override
     public void onSubscribe(Subscription subscription) {
-        if (!this.subscription.compareAndSet(null, subscription)) {
-            throw new IllegalStateException("supported only single subscription!");
-        }
+        ref.init(subscription);
     }
 
     @Override

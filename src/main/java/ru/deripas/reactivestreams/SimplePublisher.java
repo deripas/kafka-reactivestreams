@@ -5,21 +5,17 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 public abstract class SimplePublisher<T> implements Publisher<T> {
 
-    private final AtomicReference<Subscriber<? super T>> subscriber = new AtomicReference<>(null);
+    private final SubscriberRef<T> ref = new SubscriberRef<>();
 
     protected Subscriber<? super T> subscriber() {
-        return subscriber.get();
+        return ref;
     }
 
     @Override
     public void subscribe(Subscriber<? super T> subscriber) {
-        if (!this.subscriber.compareAndSet(null, subscriber)) {
-            throw new IllegalStateException("supported only single subscriber!");
-        }
+        ref.init(subscriber);
         subscriber.onSubscribe(createSubscription(subscriber));
     }
 
