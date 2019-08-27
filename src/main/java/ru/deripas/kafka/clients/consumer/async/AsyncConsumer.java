@@ -7,7 +7,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
@@ -27,7 +26,7 @@ public class AsyncConsumer<K, V> {
                 .build());
     }
 
-    public <T> CompletableFuture<T> doOnConsumer(Function<Consumer<K, V>, T> transform) {
+    protected <T> CompletableFuture<T> doOnConsumer(Function<Consumer<K, V>, T> transform) {
         return supplyAsync(() -> transform.apply(consumer), executorService);
     }
 

@@ -12,6 +12,7 @@ import org.testng.annotations.Test;
 import ru.deripas.kafka.clients.consumer.ConsumerRecordsUtil;
 import ru.deripas.kafka.clients.consumer.SimpleMockConsumer;
 import ru.deripas.kafka.clients.consumer.async.AsyncConsumer;
+import ru.deripas.reactivestreams.FilteringProcessor;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -74,7 +75,7 @@ public class RxConsumerTest {
     public void testIgnoreEmpty() {
         List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
         Publisher<ConsumerRecords<Integer, Integer>> source = ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1))
-                .with(IgnoreEmptyConsumerRecordsProcessor.create());
+                .with(FilteringProcessor.create(ConsumerRecords::isEmpty));
 
         Flowable.fromPublisher(source)
                 .timeout(200, TimeUnit.MILLISECONDS)
