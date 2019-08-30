@@ -5,7 +5,6 @@ import org.reactivestreams.Subscription;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 public class FilteringProcessorTest {
@@ -14,6 +13,7 @@ public class FilteringProcessorTest {
     private Subscriber<String> subscriber;
     private Subscription subscription;
 
+    @SuppressWarnings("unchecked")
     @BeforeMethod
     public void init() {
         processor = FilteringProcessor.create(String::isEmpty);
