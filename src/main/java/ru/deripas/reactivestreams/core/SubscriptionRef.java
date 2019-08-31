@@ -1,6 +1,7 @@
-package ru.deripas.reactivestreams;
+package ru.deripas.reactivestreams.core;
 
 import org.reactivestreams.Subscription;
+import ru.deripas.reactivestreams.Subscriptions;
 
 import java.util.concurrent.atomic.AtomicReference;
 

@@ -14,6 +14,7 @@ import ru.deripas.kafka.clients.consumer.ConsumerRecordsUtil;
 import ru.deripas.kafka.clients.consumer.SimpleMockConsumer;
 import ru.deripas.kafka.clients.consumer.async.AsyncConsumer;
 import ru.deripas.reactivestreams.FilteringProcessor;
+import ru.deripas.reactivestreams.util.PublisherBuilder;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -21,7 +22,6 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 import static java.util.Collections.singleton;
-import static java.util.stream.StreamSupport.stream;
 
 @Slf4j
 public class ReactorConsumerTest {
@@ -71,8 +71,9 @@ public class ReactorConsumerTest {
     @Test
     public void testIgnoreEmpty() {
         List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
-        Publisher<ConsumerRecords<Integer, Integer>> source = ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1))
-                .with(FilteringProcessor.create(ConsumerRecords::isEmpty));
+        Publisher<ConsumerRecords<Integer, Integer>> source = PublisherBuilder.create(ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1)))
+                .then(FilteringProcessor.<ConsumerRecords<Integer, Integer>>create(ConsumerRecords::isEmpty))
+                .build();
 
         StepVerifier.create(
                 Flux.from(source)

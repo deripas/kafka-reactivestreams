@@ -13,6 +13,12 @@ import java.util.function.Function;
 
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 
+/**
+ * Thread safe wrapper for Kafka {@code Consumer<K, V>}.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 @Slf4j
 public class AsyncConsumer<K, V> {
 
@@ -26,7 +32,7 @@ public class AsyncConsumer<K, V> {
                 .build());
     }
 
-    protected <T> CompletableFuture<T> doOnConsumer(Function<Consumer<K, V>, T> transform) {
+    public <T> CompletableFuture<T> doOnConsumer(Function<Consumer<K, V>, T> transform) {
         return supplyAsync(() -> transform.apply(consumer), executorService);
     }
 

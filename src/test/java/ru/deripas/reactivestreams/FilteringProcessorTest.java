@@ -1,9 +1,13 @@
 package ru.deripas.reactivestreams;
 
+import io.reactivex.Flowable;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
+import ru.deripas.reactivestreams.util.PublisherBuilder;
 
 import static org.mockito.Mockito.*;
 
@@ -52,5 +56,30 @@ public class FilteringProcessorTest {
         processor.onNext("");
         verifyNoMoreInteractions(subscriber);
         verify(subscription).request(1);
+    }
+
+    @Test
+    public void testRxJavaUsing() {
+        Flowable.just("1", "", "2", "", "3")
+                .compose(upstream -> PublisherBuilder.create(upstream)
+                        .then(FilteringProcessor.create(String::isEmpty))
+                        .build())
+                .test()
+                .assertSubscribed()
+                .assertValues("1", "2", "3")
+                .assertNoErrors()
+                .assertComplete();
+    }
+
+    @Test
+    public void testReactorUsing() {
+        StepVerifier.create(
+                Flux.just("1", "", "2", "", "3")
+                        .compose(flux -> PublisherBuilder.create(flux)
+                                .then(FilteringProcessor.create(String::isEmpty))
+                                .build()))
+                .expectSubscription()
+                .expectNext("1", "2", "3")
+                .verifyComplete();
     }
 }

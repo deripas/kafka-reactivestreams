@@ -1,11 +1,11 @@
-package ru.deripas.kafka.clients.util;
+package ru.deripas.reactivestreams.util;
 
 import lombok.experimental.UtilityClass;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 @UtilityClass
-public class AtomicLongUtil {
+public class RequestUtil {
 
     public static void safeAdd(AtomicLong number, long delta) {
         number.updateAndGet(value -> {
@@ -13,7 +13,7 @@ public class AtomicLongUtil {
                 return Long.MAX_VALUE;
             }
             long r = value + delta;
-            if (r <= 0) {
+            if (value > 0 && r < 0) {
                 return Long.MAX_VALUE;
             }
             return r;
