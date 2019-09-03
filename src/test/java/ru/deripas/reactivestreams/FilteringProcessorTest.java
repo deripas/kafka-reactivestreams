@@ -55,7 +55,6 @@ public class FilteringProcessorTest {
     public void testIgnoreOnNext() {
         processor.onNext("");
         verifyNoMoreInteractions(subscriber);
-        verify(subscription).request(1);
     }
 
     @Test

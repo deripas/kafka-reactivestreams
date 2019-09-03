@@ -25,7 +25,7 @@ public class Subscriptions {
 
         @SneakyThrows
         @Override
-        public void request(long l) {
+        public void request(long n) {
             throw error;
         }
 

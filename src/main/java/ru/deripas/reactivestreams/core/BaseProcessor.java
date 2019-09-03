@@ -30,6 +30,12 @@ public abstract class BaseProcessor<IN, OUT> extends BasePublisher<OUT> implemen
 
     @Override
     protected void doOnRequest() {
-        subscription().request(requests());
+        fireRequest(requests());
+    }
+
+    protected void fireRequest(long n) {
+        if (n > 0) {
+            subscription().request(n);
+        }
     }
 }

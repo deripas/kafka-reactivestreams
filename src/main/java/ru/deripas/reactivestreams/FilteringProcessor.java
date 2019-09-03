@@ -16,7 +16,7 @@ public class FilteringProcessor<T> extends BaseProcessor<T, T> {
     public void onNext(T item) {
         if (filter.apply(item)) {
             log.info("ignore item, try again");
-            subscription().request(1);
+            fireRequest(1);
         } else {
             subscriber().onNext(item);
         }

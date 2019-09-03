@@ -25,7 +25,11 @@ public abstract class BasePublisher<T> implements Publisher<T> {
         return requests.get();
     }
 
-    public boolean isUnbound() {
+    protected boolean needMore() {
+        return requests() > 0;
+    }
+
+    public boolean needUnbounded() {
         return requests() == Long.MAX_VALUE;
     }
 

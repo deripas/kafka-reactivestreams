@@ -21,16 +21,15 @@ public class SplitBatchProcessor<B extends Iterable<I>, I> extends BaseProcessor
 
     @Override
     protected void doOnRequest() {
-        subscription().request(isUnbound() ? Long.MAX_VALUE : prefetch);
+        subscription().request(needUnbounded() ? Long.MAX_VALUE : prefetch);
     }
 
     @Override
     public void onNext(B batch) {
         log.info("onNext({})", batch);
         batch.forEach(subscriber()::onNext);
-        
-        if (!isUnbound() && requests() > 0) {
-            subscription().request(prefetch);
+        if (needMore()) {
+            fireRequest(prefetch);
         }
     }
 }
