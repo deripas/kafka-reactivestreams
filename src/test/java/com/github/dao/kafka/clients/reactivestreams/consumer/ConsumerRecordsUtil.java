@@ -1,4 +1,4 @@
-package com.github.dao.kafka.clients.consumer;
+package com.github.dao.kafka.clients.reactivestreams.consumer;
 
 import lombok.experimental.UtilityClass;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

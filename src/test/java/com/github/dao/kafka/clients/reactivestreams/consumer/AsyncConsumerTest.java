@@ -1,23 +1,19 @@
-package com.github.dao.kafka.clients.consumer.async;
+package com.github.dao.kafka.clients.reactivestreams.consumer;
 
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import com.github.dao.kafka.clients.consumer.SimpleMockConsumer;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static com.github.dao.kafka.clients.reactivestreams.consumer.ConsumerRecordsUtil.toList;
 import static java.util.Collections.singleton;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
-import static com.github.dao.kafka.clients.consumer.ConsumerRecordsUtil.toList;
 
 public class AsyncConsumerTest {
 
@@ -44,11 +40,9 @@ public class AsyncConsumerTest {
         assertEquals(records, result);
     }
 
-    @Test
-    public void testError() {
+    @Test(expectedExceptions = ExecutionException.class)
+    public void testError() throws ExecutionException, InterruptedException {
         mockConsumer.setException(new TimeoutException());
-
-        CompletableFuture<ConsumerRecords<Integer, Integer>> future = asyncConsumer.poll(Duration.ofSeconds(5));
-        assertThrows(ExecutionException.class, future::get);
+        asyncConsumer.poll(Duration.ofSeconds(5)).get();
     }
 }

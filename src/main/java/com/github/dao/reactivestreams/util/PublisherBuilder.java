@@ -13,7 +13,11 @@ public class PublisherBuilder<T> {
     private final Supplier<Publisher<T>> source;
 
     public static <T> PublisherBuilder<T> create(Publisher<T> source) {
-        return new PublisherBuilder<>(() -> source);
+        return create(() -> source);
+    }
+
+    public static <T> PublisherBuilder<T> create(Supplier<Publisher<T>> source) {
+        return new PublisherBuilder<>(source);
     }
 
     public <R> PublisherBuilder<R> then(Processor<T, R> processor) {

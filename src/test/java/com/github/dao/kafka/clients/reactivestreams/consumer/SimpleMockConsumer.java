@@ -1,4 +1,4 @@
-package com.github.dao.kafka.clients.consumer;
+package com.github.dao.kafka.clients.reactivestreams.consumer;
 
 import com.google.common.collect.Iterators;
 import org.apache.commons.lang3.ThreadUtils;

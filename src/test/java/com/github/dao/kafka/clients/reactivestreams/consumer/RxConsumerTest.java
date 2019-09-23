@@ -1,19 +1,12 @@
-package com.github.dao.kafka.clients.consumer.reactivestreams;
+package com.github.dao.kafka.clients.reactivestreams.consumer;
 
 import io.reactivex.Flowable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
-import org.reactivestreams.Publisher;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import com.github.dao.kafka.clients.consumer.ConsumerRecordsUtil;
-import com.github.dao.kafka.clients.consumer.SimpleMockConsumer;
-import com.github.dao.kafka.clients.consumer.async.AsyncConsumer;
-import com.github.dao.reactivestreams.FilteringProcessor;
-import com.github.dao.reactivestreams.util.PublisherBuilder;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -27,12 +20,10 @@ import static java.util.Collections.singleton;
 public class RxConsumerTest {
 
     private SimpleMockConsumer<Integer, Integer> mockConsumer;
-    private AsyncConsumer<Integer, Integer> asyncConsumer;
 
     @BeforeMethod
     public void init() {
         mockConsumer = new SimpleMockConsumer<>();
-        asyncConsumer = new AsyncConsumer<>(mockConsumer);
 
         TopicPartition partition = new TopicPartition("test", 0);
         mockConsumer.subscribe(singleton(partition.topic()));
@@ -43,7 +34,8 @@ public class RxConsumerTest {
     public void test() {
         List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
 
-        Flowable.fromPublisher(ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1)))
+        ReactiveConsumer.poll(mockConsumer, Duration.ofSeconds(1))
+                .to(Flowable::fromPublisher)
                 .take(1)
                 .flatMap(Flowable::fromIterable)
                 .test()
@@ -58,9 +50,9 @@ public class RxConsumerTest {
     @Test
     public void testManyWithEmpty() {
         List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
-        Publisher<ConsumerRecords<Integer, Integer>> source = ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1));
 
-        Flowable.fromPublisher(source)
+        ReactiveConsumer.poll(mockConsumer, Duration.ofSeconds(1))
+                .to(Flowable::fromPublisher)
                 .take(3)
                 .map(ConsumerRecordsUtil::toList)
                 .test()
@@ -75,11 +67,10 @@ public class RxConsumerTest {
     @Test
     public void testIgnoreEmpty() {
         List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
-        Publisher<ConsumerRecords<Integer, Integer>> source = PublisherBuilder.create(ConsumerRecordsPublisher.create(asyncConsumer, Duration.ofSeconds(1)))
-                .then(FilteringProcessor.<ConsumerRecords<Integer, Integer>>create(ConsumerRecords::isEmpty))
-                .build();
 
-        Flowable.fromPublisher(source)
+        ReactiveConsumer.poll(mockConsumer, Duration.ofSeconds(1))
+                .to(Flowable::fromPublisher)
+                .filter(consumerRecords -> !consumerRecords.isEmpty())
                 .timeout(200, TimeUnit.MILLISECONDS)
                 .map(ConsumerRecordsUtil::toList)
                 .test()
@@ -87,5 +78,21 @@ public class RxConsumerTest {
                 .assertSubscribed()
                 .assertValues(records)
                 .assertError(TimeoutException.class);
+    }
+
+    @Test
+    public void testPerMessageConsumer() {
+        List<ConsumerRecord<Integer, Integer>> records = mockConsumer.generateRecords(10, RandomUtils::nextInt, RandomUtils::nextInt);
+
+        ReactiveConsumer.poll(mockConsumer, Duration.ofSeconds(1))
+                .split(10)
+                .to(Flowable::fromPublisher)
+                .take(records.size())
+                .test()
+                .awaitDone(5, TimeUnit.SECONDS)
+                .assertSubscribed()
+                .assertValueSequence(records)
+                .assertNoErrors()
+                .assertComplete();
     }
 }

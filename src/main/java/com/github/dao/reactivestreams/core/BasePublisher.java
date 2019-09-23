@@ -1,16 +1,18 @@
 package com.github.dao.reactivestreams.core;
 
 import com.github.dao.reactivestreams.util.RequestUtil;
-import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Slf4j
 public abstract class BasePublisher<T> implements Publisher<T> {
+
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final SubscriberRef<T> ref = new SubscriberRef<>();
     private final AtomicLong requests = new AtomicLong();
@@ -20,7 +22,7 @@ public abstract class BasePublisher<T> implements Publisher<T> {
         return ref;
     }
 
-    public long requests() {
+    protected long requests() {
         return requests.get();
     }
 
@@ -28,7 +30,7 @@ public abstract class BasePublisher<T> implements Publisher<T> {
         return requests() > 0;
     }
 
-    public boolean needUnbounded() {
+    protected boolean needUnbounded() {
         return requests() == Long.MAX_VALUE;
     }
 

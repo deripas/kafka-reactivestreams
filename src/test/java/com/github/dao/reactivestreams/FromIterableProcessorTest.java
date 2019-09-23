@@ -7,14 +7,14 @@ import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 import com.github.dao.reactivestreams.util.PublisherBuilder;
 
-public class SplitBatchProcessorTest {
+public class FromIterableProcessorTest {
 
     @Test
     public void testRxJavaUsingUnbounded() {
         Flowable.just("aa", "", "b", "", "ccc")
                 .map(s -> Chars.asList(s.toCharArray()))
                 .compose(upstream -> PublisherBuilder.create(upstream)
-                        .then(SplitBatchProcessor.create())
+                        .then(FromIterableProcessor.create())
                         .build())
                 .test()
                 .assertSubscribed()
@@ -28,7 +28,7 @@ public class SplitBatchProcessorTest {
         Flowable.just("aa", "", "b", "", "ccc")
                 .map(s -> Chars.asList(s.toCharArray()))
                 .compose(upstream -> PublisherBuilder.create(upstream)
-                        .then(SplitBatchProcessor.create())
+                        .then(FromIterableProcessor.create())
                         .build())
                 .rebatchRequests(1)
                 .test()
@@ -44,7 +44,7 @@ public class SplitBatchProcessorTest {
                 Flux.just("aa", "", "b", "", "ccc")
                         .map(s -> Chars.asList(s.toCharArray()))
                         .compose(flux -> PublisherBuilder.create(flux)
-                                .then(SplitBatchProcessor.create())
+                                .then(FromIterableProcessor.create())
                                 .build()))
                 .expectSubscription()
                 .expectNext('a', 'a', 'b', 'c', 'c', 'c')
@@ -57,7 +57,7 @@ public class SplitBatchProcessorTest {
                 Flux.just("aa", "", "b", "", "ccc")
                         .map(s -> Chars.asList(s.toCharArray()))
                         .compose(flux -> PublisherBuilder.create(flux)
-                                .then(SplitBatchProcessor.create())
+                                .then(FromIterableProcessor.create())
                                 .build()))
                 .expectSubscription()
                 .expectNext('a', 'a', 'b', 'c', 'c', 'c')

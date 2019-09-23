@@ -1,10 +1,8 @@
 package com.github.dao.reactivestreams.core;
 
-import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Subscription;
 
-@Slf4j
 public abstract class BaseProcessor<IN, OUT> extends BasePublisher<OUT> implements Processor<IN, OUT> {
 
     private final SubscriptionRef ref = new SubscriptionRef();
@@ -20,11 +18,13 @@ public abstract class BaseProcessor<IN, OUT> extends BasePublisher<OUT> implemen
 
     @Override
     public void onError(Throwable t) {
+        subscription().cancel();
         subscriber().onError(t);
     }
 
     @Override
     public void onComplete() {
+        subscription().cancel();
         subscriber().onComplete();
     }
 

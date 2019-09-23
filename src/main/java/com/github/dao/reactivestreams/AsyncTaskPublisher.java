@@ -17,7 +17,7 @@ public class AsyncTaskPublisher<T> extends BasePublisher<T> {
 
     @Override
     protected void doOnRequest() {
-        if (requests() > 0 && isBusy.compareAndSet(false, true)) {
+        if (needMore() && isBusy.compareAndSet(false, true)) {
             log.info("start request task");
             task.get().whenComplete(this::handleResult);
         }

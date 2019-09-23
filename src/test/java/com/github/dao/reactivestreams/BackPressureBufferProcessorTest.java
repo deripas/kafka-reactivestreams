@@ -1,11 +1,13 @@
 package com.github.dao.reactivestreams;
 
 import com.github.dao.reactivestreams.core.DelegateSubscriber;
-import org.jctools.util.Pow2;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -23,7 +25,7 @@ public class BackPressureBufferProcessorTest {
     public void init() {
         pauseCallback = mock(Runnable.class);
         resumeCallback = mock(Runnable.class);
-        processor = BackPressureBufferProcessor.create(100, 10, pauseCallback, resumeCallback);
+        processor = BackPressureBufferProcessor.create(new ArrayBlockingQueue<>(100), 10, pauseCallback, resumeCallback);
         processor.onSubscribe(mock(Subscription.class));
 
         subscriber = mock(Subscriber.class);
@@ -84,7 +86,7 @@ public class BackPressureBufferProcessorTest {
 
     @Test
     public void testFullBufferError() {
-        for (int i = 0; i < Pow2.roundToPowerOfTwo(100); i++) {
+        for (int i = 0; i < 100; i++) {
             processor.onNext("to buffer");
             verifyZeroInteractions(subscriber);
         }
