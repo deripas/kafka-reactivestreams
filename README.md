@@ -13,18 +13,17 @@ Reactor-kafka works well in the simple scenarios that are provided in the docume
 * DefaultKafkaReceiver does not comply with backpressure
 
 ## Expectation
-Configure Publisher to retrieve data from kafka:
+Configure kafka consumer:
 ```java
     Consumer<K, V> consumer = new KafkaConsumer<>(...)
-    Publisher<ConsumerRecords<K, V>> source = ConsumerRecordsPublisher.create(consumer, Duration.ofSeconds(1));
 ```
 Reactor using:
 ```java
-    Flux<ConsumerRecords<K, V>> flux = Flux.from(source);
+    Flux<ConsumerRecords<K, V>> flux = ReactiveConsumer.poll(consumer, Duration.ofSeconds(1)).to(Flux::from);
 ```
 RxJava using:
 ```java
-    Flowable<ConsumerRecords<K, V>> flux = Flowable.fromPublisher(source);
+    Flowable<ConsumerRecords<K, V>> flux = ReactiveConsumer.poll(consumer, Duration.ofSeconds(1)).to(Flowable::fromPublisher);
 ```
 
 To be continued...
