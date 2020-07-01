@@ -19,7 +19,7 @@ public class Subscriptions {
     }
 
     @AllArgsConstructor
-    private class SubscriptionThrows implements Subscription {
+    private static class SubscriptionThrows implements Subscription {
 
         private final Exception error;
 

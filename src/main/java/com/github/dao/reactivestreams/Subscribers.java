@@ -21,7 +21,7 @@ public class Subscribers {
     }
 
     @AllArgsConstructor
-    private class SubscriberThrows<T> implements Subscriber<T> {
+    private static class SubscriberThrows<T> implements Subscriber<T> {
 
         private final Exception error;
 
