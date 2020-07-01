@@ -2,9 +2,11 @@ package com.github.dao.reactivestreams.util;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -25,6 +27,10 @@ public class PublisherBuilder<T> {
             build().subscribe(processor);
             return processor;
         });
+    }
+
+    public <R> R to(Function<Publisher<T>, R> function) {
+        return function.apply(this.build());
     }
 
     public Publisher<T> build() {
